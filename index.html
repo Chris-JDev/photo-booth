@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Automatic Photo Booth</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="header">
+        <div class="logo">📸 Automatic Photo Booth</div>
+    </div>
+    
+    <div class="camera-container">
+        <h1>Strike a Pose!</h1>
+        
+        <div class="countdown" id="countdown"></div>
+        
+        <div id="video-container">
+            <video id="video" autoplay playsinline></video>
+        </div>
+        
+        <canvas id="canvas" width="640" height="480"></canvas>
+        <canvas id="composite-canvas" class="composite-canvas" width="640" height="480"></canvas>
+        
+        <img id="photo-preview" src="" alt="Photo Preview">
+        
+        <div class="camera-controls">
+            <button id="switch-camera" class="switch-camera">🔄 Switch Camera</button>
+            <button id="take-photo" class="take-photo">📸 Take Photo</button>
+        </div>
+        
+        <h3>Choose a Background:</h3>
+        <div class="backgrounds-container" id="backgrounds-container">
+            <div class="background-option selected" data-bg="none" style="background-color: #ddd; display: flex; justify-content: center; align-items: center;">
+                <span>None</span>
+            </div>
+            <div class="background-option" data-bg="beach" style="background-image: url('images/beach.jpg')"></div>
+            <div class="background-option" data-bg="cityscape" style="background-image: url('images/cityscape.jpg')"></div>
+            <div class="background-option" data-bg="forest" style="background-image: url('images/forest.jpg')"></div>
+            <div class="background-option" data-bg="party" style="background-image: url('images/party.jpg')"></div>
+            <div class="background-option" data-bg="space" style="background-image: url('images/space.jpg')"></div>
+        </div>
+        
+        <div class="filter-options" id="filter-options" style="display: none;">
+            <h3>Choose a Filter:</h3>
+            <div class="filter-button selected" data-filter="none">Normal</div>
+            <div class="filter-button" data-filter="grayscale(100%)">Black & White</div>
+            <div class="filter-button" data-filter="sepia(100%)">Vintage</div>
+            <div class="filter-button" data-filter="brightness(130%)">Bright</div>
+            <div class="filter-button" data-filter="contrast(150%)">High Contrast</div>
+            <div class="filter-button" data-filter="hue-rotate(90deg)">Cool</div>
+            <div class="filter-button" data-filter="invert(80%)">Negative</div>
+        </div>
+        
+        <div class="action-buttons" id="action-buttons" style="display: none;">
+            <button id="save-button" class="download-button">💾 Save to Gallery</button>
+            <button id="retake-button" class="delete-button">🔄 Retake</button>
+        </div>
+    </div>
+    
+    <div id="gallery-container">
+        <h2>Your Photo Gallery</h2>
+        <div class="gallery" id="photo-gallery"></div>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>
