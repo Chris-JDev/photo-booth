@@ -16,6 +16,12 @@ let currentFilter = 'none';
 let selectedBackground = 'none';
 let canvasWidth = 640;
 let canvasHeight = 480;
+let isListening = false;
+let recognitionActive = false;
+let recognition;
+
+// Voice command variables
+const VOICE_COMMANDS = ['cheese', 'smile', 'tech fest'];
 
 // DOM elements
 const video = document.getElementById('video');
@@ -33,9 +39,129 @@ const actionButtons = document.getElementById('action-buttons');
 const countdownEl = document.getElementById('countdown');
 
 // Initialize webcam on page load
-document.addEventListener('DOMContentLoaded', initializeWebcam);
+document.addEventListener('DOMContentLoaded', () => {
+    initializeWebcam();
+    setupSpeechRecognition();
+});
 
-// Set up camera stream
+// Set up speech recognition
+function setupSpeechRecognition() {
+    // Check if browser supports speech recognition
+    if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
+        // Create speech recognition instance
+        recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+        
+        // Configure recognition
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = 'en-US';
+        
+        // Handle recognition results
+        recognition.onresult = (event) => {
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+                const transcript = event.results[i][0].transcript.toLowerCase().trim();
+                
+                // Check if any of our voice commands are in the transcript
+                for (const command of VOICE_COMMANDS) {
+                    if (transcript.includes(command)) {
+                        console.log(`Voice command detected: ${command}`);
+                        if (!takePhotoBtn.disabled) {
+                            startPhotoProcess();
+                        }
+                        break;
+                    }
+                }
+            }
+        };
+        
+        // Handle errors
+        recognition.onerror = (event) => {
+            console.error('Speech Recognition Error:', event.error);
+            toggleVoiceRecognition(); // Try to restart if error occurs
+        };
+        
+        // Handle when recognition stops
+        recognition.onend = () => {
+            if (recognitionActive) {
+                recognition.start(); // Restart if it should be active
+            }
+        };
+        
+        // Add voice command toggle button
+        addVoiceCommandToggle();
+    } else {
+        console.warn('Speech Recognition not supported in this browser');
+    }
+}
+
+// Add voice command toggle button
+function addVoiceCommandToggle() {
+    const voiceToggleBtn = document.createElement('button');
+    voiceToggleBtn.id = 'voice-toggle';
+    voiceToggleBtn.className = 'voice-toggle';
+    voiceToggleBtn.innerHTML = '🎤 Enable Voice Commands';
+    
+    // Insert before camera controls
+    const cameraControls = document.querySelector('.camera-controls');
+    cameraControls.parentNode.insertBefore(voiceToggleBtn, cameraControls);
+    
+    // Add event listener
+    voiceToggleBtn.addEventListener('click', toggleVoiceRecognition);
+}
+
+// Toggle voice recognition on/off
+function toggleVoiceRecognition() {
+    if (!recognition) return;
+    
+    recognitionActive = !recognitionActive;
+    const voiceToggleBtn = document.getElementById('voice-toggle');
+    
+    if (recognitionActive) {
+        try {
+            recognition.start();
+            voiceToggleBtn.innerHTML = '🎤 Voice Commands Active';
+            voiceToggleBtn.classList.add('active');
+            showVoiceCommandHelper();
+        } catch (err) {
+            console.error('Failed to start recognition:', err);
+        }
+    } else {
+        recognition.stop();
+        voiceToggleBtn.innerHTML = '🎤 Enable Voice Commands';
+        voiceToggleBtn.classList.remove('active');
+        hideVoiceCommandHelper();
+    }
+}
+
+// Show helper message with available voice commands
+function showVoiceCommandHelper() {
+    let helperEl = document.getElementById('voice-helper');
+    
+    if (!helperEl) {
+        helperEl = document.createElement('div');
+        helperEl.id = 'voice-helper';
+        helperEl.className = 'voice-helper';
+        helperEl.innerHTML = `
+            <p>Say one of these commands to take a photo:</p>
+            <ul>${VOICE_COMMANDS.map(cmd => `<li>${cmd}</li>`).join('')}</ul>
+        `;
+        
+        const cameraControls = document.querySelector('.camera-controls');
+        cameraControls.parentNode.insertBefore(helperEl, cameraControls.nextSibling);
+    }
+    
+    helperEl.style.display = 'block';
+}
+
+// Hide voice command helper
+function hideVoiceCommandHelper() {
+    const helperEl = document.getElementById('voice-helper');
+    if (helperEl) {
+        helperEl.style.display = 'none';
+    }
+}
+
+// Set up camera stream with device's highest available resolution
 async function initializeWebcam() {
     try {
         // Stop any existing stream
@@ -43,18 +169,49 @@ async function initializeWebcam() {
             currentStream.getTracks().forEach(track => track.stop());
         }
         
-        // Start a new stream
+        // Get available camera devices
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter(device => device.kind === 'videoinput');
+        
+        // Start with highest possible resolution
         const constraints = {
             video: { 
                 facingMode: currentCamera,
-                width: { ideal: canvasWidth },
-                height: { ideal: canvasHeight }
+                width: { ideal: 4096 },  // Request maximum resolution
+                height: { ideal: 2160 }  // Request maximum resolution
             },
             audio: false
         };
         
         currentStream = await navigator.mediaDevices.getUserMedia(constraints);
         video.srcObject = currentStream;
+        
+        // Once video is loaded, update canvas dimensions
+        video.onloadedmetadata = () => {
+            // Get the actual dimensions of the video stream
+            const track = currentStream.getVideoTracks()[0];
+            const settings = track.getSettings();
+            
+            // Update canvas dimensions
+            canvasWidth = settings.width;
+            canvasHeight = settings.height;
+            
+            canvas.width = canvasWidth;
+            canvas.height = canvasHeight;
+            compositeCanvas.width = canvasWidth;
+            compositeCanvas.height = canvasHeight;
+            
+            console.log(`Camera resolution: ${canvasWidth}x${canvasHeight}`);
+            
+            // Adjust video container size
+            const videoContainer = document.getElementById('video-container');
+            videoContainer.style.height = 'auto';
+            videoContainer.style.maxHeight = '80vh';
+            
+            // Make preview fill the screen better
+            photoPreview.style.maxHeight = '80vh';
+            photoPreview.style.height = 'auto';
+        };
     } catch (err) {
         console.error("Error accessing camera: ", err);
         alert("Unable to access the camera. Please make sure you've granted camera permission.");
@@ -115,6 +272,15 @@ function capturePhoto() {
     // Hide camera controls
     takePhotoBtn.style.display = 'none';
     switchCameraBtn.style.display = 'none';
+    
+    // Hide voice command toggle during preview
+    const voiceToggleBtn = document.getElementById('voice-toggle');
+    if (voiceToggleBtn) {
+        voiceToggleBtn.style.display = 'none';
+    }
+    
+    // Hide voice helper during preview
+    hideVoiceCommandHelper();
 }
 
 // Apply background and current filter
@@ -251,6 +417,17 @@ function resetPhotoDisplay() {
     takePhotoBtn.disabled = false;
     switchCameraBtn.disabled = false;
     
+    // Show voice command toggle
+    const voiceToggleBtn = document.getElementById('voice-toggle');
+    if (voiceToggleBtn) {
+        voiceToggleBtn.style.display = 'inline-block';
+    }
+    
+    // Show voice helper if voice commands are active
+    if (recognitionActive) {
+        showVoiceCommandHelper();
+    }
+    
     // Reset filter to none
     currentFilter = 'none';
     filterButtons.forEach(btn => {
@@ -262,15 +439,18 @@ function resetPhotoDisplay() {
     });
 }
 
-// Check if this is a mobile device with touch support
-if ('ontouchstart' in window) {
-    // Mobile device specific adjustments
-    canvasWidth = Math.min(640, window.innerWidth - 40);
-    canvasHeight = Math.floor(canvasWidth * 3/4); // Maintain aspect ratio
-    
-    // Update canvas dimensions
-    canvas.width = canvasWidth;
-    canvas.height = canvasHeight;
-    compositeCanvas.width = canvasWidth;
-    compositeCanvas.height = canvasHeight;
+// Mobile responsiveness adjustments
+function updateLayoutForScreenSize() {
+    // Make the preview and camera view responsive to the device size
+    if (window.innerWidth <= 600) {
+        // Mobile adjustments already handled by CSS
+    } else {
+        // For larger screens, make better use of available space
+        document.getElementById('video-container').style.maxHeight = '80vh';
+        photoPreview.style.maxHeight = '80vh';
+    }
 }
+
+// Update layout on window resize
+window.addEventListener('resize', updateLayoutForScreenSize);
+updateLayoutForScreenSize();
