@@ -1,8 +1,8 @@
 body {
     font-family: 'Arial', sans-serif;
-    max-width: 800px;
+    max-width: 100%;
     margin: 0 auto;
-    padding: 20px;
+    padding: 10px;
     text-align: center;
     background-color: #f5f5f5;
     color: #333;
@@ -10,7 +10,7 @@ body {
 
 h1 {
     color: #4285f4;
-    margin-bottom: 30px;
+    margin-bottom: 20px;
 }
 
 .camera-container {
@@ -20,6 +20,8 @@ h1 {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     margin-bottom: 20px;
     position: relative;
+    max-width: 90vw;
+    margin: 0 auto;
 }
 
 .camera-button {
@@ -60,12 +62,22 @@ h1 {
     transform: scale(1.05);
 }
 
+.filter-button.selected {
+    box-shadow: 0 0 0 2px white, 0 0 0 4px #34a853;
+}
+
 .countdown {
     font-size: 48px;
     font-weight: bold;
     color: #ea4335;
     margin: 20px 0;
     height: 60px;
+    position: absolute;
+    top: 45%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+    text-shadow: 0 0 10px white, 0 0 20px white;
 }
 
 .gallery {
@@ -140,12 +152,13 @@ h1 {
 #video-container {
     position: relative;
     width: 100%;
-    max-width: 640px;
-    height: 480px;
+    max-width: 100%;
+    height: auto;
     margin: 0 auto;
     overflow: hidden;
     background-color: #000;
     border-radius: 10px;
+    max-height: 80vh;
 }
 
 #video {
@@ -160,9 +173,9 @@ h1 {
 
 #photo-preview {
     width: 100%;
-    max-width: 640px;
-    height: 480px;
-    margin: 20px auto;
+    max-width: 100%;
+    max-height: 80vh;
+    margin: 10px auto;
     border-radius: 10px;
     object-fit: contain;
     display: none;
@@ -202,6 +215,10 @@ h1 {
 
 .camera-controls {
     margin: 20px 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
 }
 
 .switch-camera {
@@ -226,31 +243,91 @@ h1 {
     margin: 0 10px;
 }
 
+/* Voice command styles */
+.voice-toggle {
+    background-color: #2196F3;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: bold;
+    margin: 10px auto;
+    display: block;
+    transition: background-color 0.3s;
+}
+
+.voice-toggle.active {
+    background-color: #4CAF50;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(76, 175, 80, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(76, 175, 80, 0);
+    }
+}
+
+.voice-helper {
+    background-color: #e3f2fd;
+    border: 1px solid #bbdefb;
+    border-radius: 8px;
+    padding: 10px;
+    margin: 10px auto;
+    max-width: 80%;
+    font-size: 14px;
+}
+
+.voice-helper ul {
+    list-style: none;
+    padding: 0;
+    margin: 5px 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+}
+
+.voice-helper li {
+    background-color: #2196F3;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-weight: bold;
+}
+
 /* Mobile responsiveness */
 @media (max-width: 600px) {
     body {
-        padding: 10px;
+        padding: 5px;
     }
     
     .camera-container {
         padding: 10px;
+        max-width: 95vw;
     }
     
     #video-container {
-        height: 360px;
+        height: auto;
+        max-height: 70vh;
     }
     
     #photo-preview {
-        height: 360px;
+        max-height: 70vh;
     }
     
     .camera-controls {
-        display: flex;
         flex-direction: column;
         align-items: center;
     }
     
-    .switch-camera, .take-photo {
+    .switch-camera, .take-photo, .voice-toggle {
         margin: 5px 0;
         width: 80%;
     }
@@ -259,4 +336,34 @@ h1 {
         width: 70px;
         height: 60px;
     }
+    
+    h1 {
+        font-size: 24px;
+        margin-bottom: 15px;
+    }
+    
+    .voice-helper {
+        max-width: 95%;
+    }
+}
+
+/* Fullscreen mode */
+.fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: black;
+    z-index: 1000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.fullscreen #video,
+.fullscreen #photo-preview {
+    max-height: 100vh;
+    max-width: 100vw;
+    object-fit: contain;
 }
